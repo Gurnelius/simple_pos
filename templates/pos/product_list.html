@@ -1,0 +1,17 @@
+{% extends 'base_generic.html' %}
+{% block content %}
+<h2>Products</h2>
+<ul>
+  {% for product in products %}
+  <li>
+    {{ product.name }} - ${{ product.price }} - {{ product.stock }} in stock
+    <form method="post" action="{% url 'create_sale' %}">
+      {% csrf_token %}
+      <input type="hidden" name="product_id" value="{{ product.id }}">
+      <input type="number" name="quantity" min="1" max="{{ product.stock }}" value="1">
+      <button type="submit">Buy</button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

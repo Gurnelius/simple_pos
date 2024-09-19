@@ -1,0 +1,16 @@
+{% extends 'base_generic.html' %}
+
+{% block content %}
+  <h2>Sale Details</h2>
+  <p><strong>ID:</strong> {{ sale.id }}</p>
+  <p><strong>Date:</strong> {{ sale.date }}</p>
+  <p><strong>Total Price:</strong> {{ sale.total_price }}</p>
+  <p><strong>Cashier:</strong> {{ sale.cashier }}</p>
+  <h3>Items</h3>
+  <ul>
+    {% for item in sale.items.all %}
+      <li>{{ item.product }} - {{ item.quantity }} @ {{ item.price }}</li>
+    {% endfor %}
+  </ul>
+  <a href="{% url 'refund' %}?sale_id={{ sale.id }}">Process Refund</a>
+{% endblock %}

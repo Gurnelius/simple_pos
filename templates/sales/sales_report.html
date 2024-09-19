@@ -1,0 +1,12 @@
+{% extends 'base_generic.html' %}
+
+{% block content %}
+  <h2>Sales Report</h2>
+  <ul>
+    {% for sale in sales %}
+      <li>
+        <a href="{% url 'sale_detail' sale.id %}">{{ sale }}</a> - {{ sale.total_price }}
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock %}
