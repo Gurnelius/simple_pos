@@ -13,7 +13,7 @@ class Product(models.Model):
     
     def __str__(self):
         return self.name
-
+    @property
     def get_image_url(self):
         if self.image:
             return self.image.url

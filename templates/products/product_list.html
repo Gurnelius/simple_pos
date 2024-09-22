@@ -31,6 +31,12 @@
         </div>
       </div>
     </div>
+    {% empty %}
+        <div class="col-12">
+          <div class="alert alert-info" role="alert">
+            No products available.
+          </div>
+        </div>
     {% endfor %}
   </div>
 </div>

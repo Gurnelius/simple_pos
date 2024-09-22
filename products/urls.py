@@ -9,7 +9,4 @@ urlpatterns = [
     path('products/', ProductListView.as_view(), name='product_list'),
 ] 
 
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-
 

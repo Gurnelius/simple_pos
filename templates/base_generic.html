@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,6 +7,7 @@
     <title>{% block title %}Simple POS{% endblock %}</title>
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
 
@@ -22,6 +24,18 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'product_list' %}">Products</a>
                 </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Products
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <a class="dropdown-item" href="{% url 'product_list' %}">All Products</a>
+                        <a class="dropdown-item" href="{% url 'product_list' %}">New Products</a>
+                        <a class="dropdown-item" href="{% url 'product_list' %}">Sale Products</a>
+                    </div>
+                </li>
+
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'create_sale' %}">Sales</a>
                 </li>
@@ -30,12 +44,12 @@
                 </li>
             </ul>
 
-            <!-- Search Form -->
-            <form class="form-inline my-2 my-lg-0" method="get" action="{% url 'product_list' %}">
-                <input class="form-control mr-sm-2" type="search" placeholder="Search products..." aria-label="Search" name="q">
+            
+            <form method="get" action="{{ request.path }}" class="form-inline my-2 my-lg-0">
+                <input class="form-control mr-sm-2" type="search" name="q" placeholder="Search" aria-label="Search" value="{{ request.GET.q }}">
                 <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
             </form>
-
+            
             <!-- Authentication Links -->
             <ul class="navbar-nav ml-auto">
                 {% if user.is_authenticated %}
