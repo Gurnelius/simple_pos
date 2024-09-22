@@ -6,24 +6,27 @@ from django.contrib import messages
 from django.urls import reverse_lazy
 from .models import Sale, SaleItem
 from products.models import Product
-from .forms import RefundForm
+from .forms import CreateSaleForm, RefundForm
 
 class CreateSaleView(LoginRequiredMixin, FormView):
-    template_name = 'pos/create_sale.html'
+    template_name = 'sales/create_sale.html'
+    form_class = CreateSaleForm
     success_url = reverse_lazy('product_list')
 
-    def post(self, request, *args, **kwargs):
-        product_id = request.POST['product_id']
+    def form_valid(self, form):
+        product_id = form.cleaned_data['product_id']
+        quantity = form.cleaned_data['quantity']
+        
+        # Get the product
         product = get_object_or_404(Product, id=product_id)
-        quantity = int(request.POST['quantity'])
+        
+        # Create the sale using the model method
+        sale = Sale()
+        sale.cashier = self.request.user  # Set the cashier
+        sale.create_sale(product, quantity)  # Call the method to create the sale
 
-        # Create sale and deduct stock
-        sale = Sale.objects.create(total_amount=product.price * quantity)
-        SaleItem.objects.create(sale=sale, product=product, quantity=quantity, unit_price=product.price)
+        return super().form_valid(form)
 
-        product.stock -= quantity
-        product.save()
-        return super().form_valid(request)
     
 # View for listing all sales
 class SaleListView(ListView):
@@ -65,3 +68,50 @@ class SalesReportView(ListView):
     def get_queryset(self):
         # Implement your logic for filtering/sorting sales reports
         return Sale.objects.all()
+
+from django.shortcuts import render, redirect
+from django.views import View
+from django.http import HttpResponseRedirect
+from .models import Product
+
+class AddToCartView(View):
+    def post(self, request, *args, **kwargs):
+        product_id = request.POST['product_id']
+        quantity = int(request.POST['quantity'])
+        product = get_object_or_404(Product, id=product_id)
+
+        # Initialize the cart in session if it doesn't exist
+        if 'cart' not in request.session:
+            request.session['cart'] = {}
+
+        # Update cart
+        cart = request.session['cart']
+        if product_id in cart:
+            cart[product_id] += quantity
+        else:
+            cart[product_id] = quantity
+
+        request.session['cart'] = cart
+        return redirect('product_list')  # Redirect to the product list
+
+class CartView(View):
+    def get(self, request, *args, **kwargs):
+        cart = request.session.get('cart', {})
+        products = []
+        total_price = 0
+
+        for product_id, quantity in cart.items():
+            product = get_object_or_404(Product, id=product_id)
+            products.append({
+                'product': product,
+                'quantity': quantity,
+                'subtotal': product.price * quantity
+            })
+            total_price += product.price * quantity
+
+        return render(request, 'pos/cart.html', {
+            'products': products,
+            'total_price': total_price
+        })
+
+# You will also need a view to handle completing the sale.

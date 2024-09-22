@@ -1,5 +1,7 @@
 from django.urls import path
 from .views import (
+    AddToCartView,
+    CartView,
     SaleListView,
     SaleDetailView,
     RefundView,
@@ -13,4 +15,6 @@ urlpatterns = [
     path('sales/<int:pk>/', SaleDetailView.as_view(), name='sale_detail'),
     path('sales/refund/', RefundView.as_view(), name='refund'),
     path('sales/reports/', SalesReportView.as_view(), name='sales_report'),
+    path('add_to_cart/', AddToCartView.as_view(), name='add_to_cart'),
+    path('cart/', CartView.as_view(), name='cart'),
 ]
