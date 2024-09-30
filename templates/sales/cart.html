@@ -1,0 +1,17 @@
+{% extends 'base_generic.html' %}
+{% block content %}
+<div class="container mt-5">
+  <h2 class="text-center">Your Cart</h2>
+  <ul class="list-group">
+    {% for item in products %}
+    <li class="list-group-item">
+      {{ item.product.name }} - {{ item.quantity }} x ${{ item.product.price }} = ${{ item.subtotal }}
+    </li>
+    {% empty %}
+    <li class="list-group-item">Your cart is empty.</li>
+    {% endfor %}
+  </ul>
+  <h3>Total: ${{ total_price }}</h3>
+  <a href="{% url 'complete_sale' %}" class="btn btn-success">Complete Sale</a>
+</div>
+{% endblock %}

@@ -71,7 +71,6 @@ class SalesReportView(ListView):
 
 from django.shortcuts import render, redirect
 from django.views import View
-from django.http import HttpResponseRedirect
 from .models import Product
 
 class AddToCartView(View):
@@ -109,9 +108,8 @@ class CartView(View):
             })
             total_price += product.price * quantity
 
-        return render(request, 'pos/cart.html', {
+        return render(request, 'sales/cart.html', {
             'products': products,
             'total_price': total_price
         })
 
-# You will also need a view to handle completing the sale.
