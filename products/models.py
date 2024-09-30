@@ -11,6 +11,8 @@ class Product(models.Model):
     is_sellable = models.BooleanField(default=True)
     image = models.ImageField(upload_to='product_images/', null=True, blank=True)
     stock = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    digital = models.BooleanField(default=False, null=True, blank=True)
+
 
     def __str__(self):
         return self.name

@@ -4,7 +4,7 @@
 {% block content %}
 <div class="container mt-5">
     <h2 class="text-center">Create Sale</h2>
-    <form method="post" action="{% url 'create_sale' %}">
+    <form method="post" action="{% url 'sales_list' %}">
         {% csrf_token %}
         <div class="form-group">
             <label for="product">Select Product</label>

@@ -1,12 +1,18 @@
 {% extends 'base_generic.html' %}
 
 {% block content %}
-  <h2>Sales List</h2>
-  <ul>
-    {% for sale in sales %}
-      <li>
-        <a href="{% url 'sale_detail' sale.id %}">{{ sale }}</a> - {{ sale.total_price }}
-      </li>
-    {% endfor %}
-  </ul>
+    <h2>Completed Sales</h2>
+    
+    {% if orders %}
+        <ul>
+        {% for order in orders %}
+            <li>
+                Order ID: {{ order.id }} | Transaction ID: {{ order.transaction_id }} | User: {{ order.user }} | Date: {{ order.created_at }}
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No completed sales available.</p>
+    {% endif %}
+    
 {% endblock %}

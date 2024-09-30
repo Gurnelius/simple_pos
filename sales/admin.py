@@ -1,13 +1,14 @@
 from django.contrib import admin
-from .models import Sale, SaleItem
+from .models import Order, OrderItem
 
-@admin.register(Sale)
-class SaleAdmin(admin.ModelAdmin):
-    list_display = ('id', 'total_price', 'created_at', 'cashier')  # Ensure these fields exist
-    search_fields = ('id', 'cashier__username')
-    list_filter = ('created_at',)  # Ensure this field exists
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'complete', 'get_cart_items', 'get_cart_total', 'shipping')
+    list_display_links = ('id', 'user')
+    list_filter = ('complete', 'created_at')
+    list_editable = ('complete',)
+    search_fields = ('id','complete')
 
-@admin.register(SaleItem)
-class SaleItemAdmin(admin.ModelAdmin):
-    list_display = ('sale', 'product', 'quantity', 'unit_price')  # Ensure these fields exist
-    search_fields = ('product__name', 'sale__id')
+@admin.register(OrderItem)
+class OrderItemAdmin(admin.ModelAdmin):
+    list_display = ('id', 'order', 'product', 'quantity')

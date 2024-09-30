@@ -1,115 +1,138 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, UpdateView
-from django.views.generic.edit import FormView
-from django.contrib import messages
-from django.urls import reverse_lazy
-from .models import Sale, SaleItem
 from products.models import Product
-from .forms import CreateSaleForm, RefundForm
 
-class CreateSaleView(LoginRequiredMixin, FormView):
-    template_name = 'sales/create_sale.html'
-    form_class = CreateSaleForm
-    success_url = reverse_lazy('product_list')
-
-    def form_valid(self, form):
-        product_id = form.cleaned_data['product_id']
-        quantity = form.cleaned_data['quantity']
-        
-        # Get the product
-        product = get_object_or_404(Product, id=product_id)
-        
-        # Create the sale using the model method
-        sale = Sale()
-        sale.cashier = self.request.user  # Set the cashier
-        sale.create_sale(product, quantity)  # Call the method to create the sale
-
-        return super().form_valid(form)
-
-    
-# View for listing all sales
-class SaleListView(ListView):
-    model = Sale
-    template_name = 'sales/sale_list.html'
-    context_object_name = 'sales'
-    ordering = ['-date']  # Order by date descending
-
-# View for viewing detailed sale information
-class SaleDetailView(DetailView):
-    model = Sale
-    template_name = 'sales/sale_detail.html'
-    context_object_name = 'sale'
-
-# View for processing refunds
-class RefundView(FormView):
-    template_name = 'sales/refund_form.html'
-    form_class = RefundForm
-    success_url = reverse_lazy('sale_list')
-
-    def form_valid(self, form):
-        sale_id = form.cleaned_data['sale_id']
-        refund_amount = form.cleaned_data['refund_amount']
-        sale = get_object_or_404(Sale, id=sale_id)
-        
-        # Process the refund (custom logic needed here)
-        sale.refund(refund_amount)
-        sale.save()
-        
-        messages.success(self.request, 'Refund processed successfully.')
-        return super().form_valid(form)
-
-# Example view for sales reports (if needed)
-class SalesReportView(ListView):
-    model = Sale
-    template_name = 'sales/sales_report.html'
-    context_object_name = 'sales'
-
-    def get_queryset(self):
-        # Implement your logic for filtering/sorting sales reports
-        return Sale.objects.all()
 
 from django.shortcuts import render, redirect
 from django.views import View
-from .models import Product
+from django.http import JsonResponse
+from core.mpesa.mpesa_api import Mpesa
 
-class AddToCartView(View):
+from django.views.generic import FormView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import redirect
+from django.views.generic import TemplateView
+from .utils import cartData
+
+
+
+class MpesaCallbackView(View):
+    def post(self, request):
+        # Handle the callback from the Mpesa class
+        mpesa = Mpesa()
+        callback_data = mpesa.handle_callback(request)
+        # Update order status or payment confirmation based on the callback
+        return JsonResponse({"status": "callback received"})
+    
+class CartView(TemplateView):
+    template_name = 'store/cart.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        data = cartData(self.request)
+        context['items'] = data['items']
+        context['order'] = data['order']
+        context['cartItems'] = data['cartItems']
+        return context
+
+class CheckoutView(TemplateView):
+    template_name = 'store/checkout.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        data = cartData(self.request)
+        context['items'] = data['items']
+        context['order'] = data['order']
+        context['cartItems'] = data['cartItems']
+        return context
+
+
+class StoreView(TemplateView):
+    template_name = 'store/store.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        data = cartData(self.request)
+        context['products'] = Product.objects.all()
+        context['cartItems'] = data['cartItems']
+        return context
+
+from django.views import View
+from django.http import JsonResponse
+import json
+from .models import Product, Order, OrderItem
+
+class UpdateItemView(View):
     def post(self, request, *args, **kwargs):
-        product_id = request.POST['product_id']
-        quantity = int(request.POST['quantity'])
-        product = get_object_or_404(Product, id=product_id)
+        data = json.loads(request.body)
+        productId = data['productId']
+        action = data['action']
 
-        # Initialize the cart in session if it doesn't exist
-        if 'cart' not in request.session:
-            request.session['cart'] = {}
+        customer = request.user.customer
+        product = Product.objects.get(id=productId)
+        order, created = Order.objects.get_or_create(customer=customer, complete=False)
 
-        # Update cart
-        cart = request.session['cart']
-        if product_id in cart:
-            cart[product_id] += quantity
+        orderItem, created = OrderItem.objects.get_or_create(order=order, product=product)
+
+        if action == 'add':
+            orderItem.quantity = (orderItem.quantity + 1)
+        elif action == 'remove':
+            orderItem.quantity = (orderItem.quantity - 1)
+
+        orderItem.save()
+
+        if orderItem.quantity <= 0:
+            orderItem.delete()
+
+        return JsonResponse('Item was added', safe=False)
+
+from django.views import View
+from django.http import JsonResponse
+import datetime
+import json
+from .models import Order, ShippingAddress
+from .utils import guestOrder
+
+class ProcessOrderView(View):
+    def post(self, request, *args, **kwargs):
+        transaction_id = datetime.datetime.now().timestamp()
+        data = json.loads(request.body)
+
+        if request.user.is_authenticated:
+            customer = request.user.customer
+            order, created = Order.objects.get_or_create(customer=customer, complete=False)
         else:
-            cart[product_id] = quantity
+            customer, order = guestOrder(request, data)
 
-        request.session['cart'] = cart
-        return redirect('product_list')  # Redirect to the product list
+        total = float(data['form']['total'])
+        order.transaction_id = transaction_id
 
-class CartView(View):
-    def get(self, request, *args, **kwargs):
-        cart = request.session.get('cart', {})
-        products = []
-        total_price = 0
+        if total == order.get_cart_total:
+            order.complete = True
+        order.save()
 
-        for product_id, quantity in cart.items():
-            product = get_object_or_404(Product, id=product_id)
-            products.append({
-                'product': product,
-                'quantity': quantity,
-                'subtotal': product.price * quantity
-            })
-            total_price += product.price * quantity
+        if order.shipping:
+            ShippingAddress.objects.create(
+                customer=customer,
+                order=order,
+                address=data['shipping']['address'],
+                city=data['shipping']['city'],
+                state=data['shipping']['state'],
+                zipcode=data['shipping']['zipcode'],
+            )
 
-        return render(request, 'sales/cart.html', {
-            'products': products,
-            'total_price': total_price
-        })
+        return JsonResponse('Payment complete!', safe=False)
 
+
+from django.views.generic import ListView
+from .models import Order
+
+class SaleListView(ListView):
+    model = Order
+    template_name = 'sales/sale_list.html'
+    context_object_name = 'orders'
+    
+    def get_queryset(self):
+        # Filter only orders where complete is True
+        return Order.objects.filter(complete=True).order_by('-created_at')

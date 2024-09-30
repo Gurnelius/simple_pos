@@ -18,13 +18,9 @@
             Price: ${{ product.price }}<br>
             Stock: {{ product.stock }} in stock
           </p>
-          <!-- Buy Form -->
-          <form method="post" action="{% url 'add_to_cart' %}">
-            {% csrf_token %}
-            <input type="hidden" name="product_id" value="{{ product.id }}">
-            <input type="number" name="quantity" min="1" max="{{ product.stock }}" value="1">
-            <button type="submit" class="btn btn-primary">Add to Cart</button>
-          </form>
+          
+          <button data-product={{product.id}} data-action="add" class="btn btn-outline-secondary add-btn update-cart">Add to Cart</button>
+          <a class="btn btn-outline-success" href="#">View</a>
         </div>
       </div>
     </div>
@@ -38,3 +34,5 @@
   </div>
 </div>
 {% endblock %}
+
+

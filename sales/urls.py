@@ -1,20 +1,34 @@
 from django.urls import path
 from .views import (
-    AddToCartView,
     CartView,
-    SaleListView,
-    SaleDetailView,
-    RefundView,
-    SalesReportView,
-    CreateSaleView
+    CheckoutView,
+    MpesaCallbackView,
+
+    CartView,
+    CheckoutView,
+    StoreView,
+    UpdateItemView,
+    ProcessOrderView,
+
+    SaleListView
 )
 
 urlpatterns = [
-    path('create_sale/', CreateSaleView.as_view(), name='create_sale'),
-    path('sales/', SaleListView.as_view(), name='sale_list'),
-    path('sales/<int:pk>/', SaleDetailView.as_view(), name='sale_detail'),
-    path('sales/refund/', RefundView.as_view(), name='refund'),
-    path('sales/reports/', SalesReportView.as_view(), name='sales_report'),
-    path('add_to_cart/', AddToCartView.as_view(), name='add_to_cart'),
     path('cart/', CartView.as_view(), name='cart'),
+
+    # Mpesa
+    path('checkout/', CheckoutView.as_view(), name='checkout'),
+    path('mpesa/callback/', MpesaCallbackView.as_view(), name='mpesa_callback'),
+
+    # Process order view
+    path('cart/', CartView.as_view(), name='cart'),
+    path('checkout/', CheckoutView.as_view(), name='checkout'),
+    path('store/', StoreView.as_view(), name='store'),
+    path('update_item/', UpdateItemView.as_view(), name='update_item'),
+    path('process_order/', ProcessOrderView.as_view(), name='process_order'),
+
+    # Sales
+    path('sales/', SaleListView.as_view(), name='sales_list'),
+
 ]
+
