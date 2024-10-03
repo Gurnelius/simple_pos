@@ -26,7 +26,7 @@ class MpesaCallbackView(View):
         return JsonResponse({"status": "callback received"})
     
 class CartView(TemplateView):
-    template_name = 'store/cart.html'
+    template_name = 'sales/cart.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -37,7 +37,7 @@ class CartView(TemplateView):
         return context
 
 class CheckoutView(TemplateView):
-    template_name = 'store/checkout.html'
+    template_name = 'sales/checkout.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -45,11 +45,13 @@ class CheckoutView(TemplateView):
         context['items'] = data['items']
         context['order'] = data['order']
         context['cartItems'] = data['cartItems']
+
+        print("Context: ", context)
         return context
 
 
 class StoreView(TemplateView):
-    template_name = 'store/store.html'
+    template_name = 'sales/store.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -69,9 +71,9 @@ class UpdateItemView(View):
         productId = data['productId']
         action = data['action']
 
-        customer = request.user.customer
+        user = request.user
         product = Product.objects.get(id=productId)
-        order, created = Order.objects.get_or_create(customer=customer, complete=False)
+        order, created = Order.objects.get_or_create(user=user, complete=False)
 
         orderItem, created = OrderItem.objects.get_or_create(order=order, product=product)
 
